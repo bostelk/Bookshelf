@@ -1,0 +1,3 @@
+# These weights files can be large on disk.
+*.pt
+*.onnx
