@@ -21,12 +21,12 @@ export const YOLO_ANCHORS = new Tensor(
     ]),
     [5, 2]);
 const DEFAULT_FILTER_BOXES_THRESHOLD = 0.01;
-const DEFAULT_IOU_THRESHOLD = 0.4;
+const DEFAULT_IOU_THRESHOLD = 0.3;
 const DEFAULT_CLASS_PROB_THRESHOLD = 0.3;
-const INPUT_DIM = 416;
+const INPUT_DIM = 640;
 
-export async function postprocess(outputTensor: Tensor, numClasses: number) {
-  const [boxXy, boxWh, boxConfidence, boxClassProbs] = yolo_head(outputTensor, YOLO_ANCHORS, 20);
+export async function postprocess(outputTensor: Tensor) {
+  const [boxXy, boxWh, boxConfidence, boxClassProbs] = yolo_head(outputTensor);
   const allBoxes = yolo_boxes_to_corners(boxXy, boxWh);
   const [outputBoxes, scores, classes] =
       await yolo_filter_boxes(allBoxes, boxConfidence, boxClassProbs, DEFAULT_FILTER_BOXES_THRESHOLD);
@@ -35,8 +35,8 @@ export async function postprocess(outputTensor: Tensor, numClasses: number) {
     return [];
   }
 
-  const width = yolo.scalar(INPUT_DIM);
-  const height = yolo.scalar(INPUT_DIM);
+  const width = yolo.scalar(1);
+  const height = yolo.scalar(1);
 
   const imageDims = yolo.reshape(yolo.stack([height, width, height, width]), [
     1,
@@ -61,16 +61,16 @@ export async function postprocess(outputTensor: Tensor, numClasses: number) {
   classesIndxArr.forEach((classIndx, i) => {
     const classProb = keepScores[i];
     if (classProb < DEFAULT_CLASS_PROB_THRESHOLD) {
-      return;
+      //return;
     }
 
     const className = classNames[classIndx];
     let [top, left, bottom, right] = boxesArr[i];
 
-    top = Math.max(0, top);
-    left = Math.max(0, left);
-    bottom = Math.min(416, bottom);
-    right = Math.min(416, right);
+    top = Math.min(640,Math.max(0, top));
+    left = Math.min(640,Math.max(0, left));
+    bottom = Math.min(640, Math.max(0, bottom));
+    right = Math.min(640, Math.max(0, right));
 
     const resultObj = {
       className,
@@ -122,16 +122,16 @@ export function yolo_boxes_to_corners(boxXy: Tensor, boxWh: Tensor) {
   const dim0 = boxMins.dims[0];
   const dim1 = boxMins.dims[1];
   const dim2 = boxMins.dims[2];
-  const size = [dim0, dim1, dim2, 1];
+  const size = [dim0, dim1, 1];
 
   return yolo.concat(
       [
-        yolo.slice(boxMins, [0, 0, 0, 1], size),
-        yolo.slice(boxMins, [0, 0, 0, 0], size),
-        yolo.slice(boxMaxes, [0, 0, 0, 1], size),
-        yolo.slice(boxMaxes, [0, 0, 0, 0], size),
+        yolo.slice(boxMins, [0, 0, 1], size),
+        yolo.slice(boxMins, [0, 0, 0], size),
+        yolo.slice(boxMaxes, [0, 0, 1], size),
+        yolo.slice(boxMaxes, [0, 0, 0], size),
       ],
-      3);
+      2);
 }
 
 /**
@@ -185,49 +185,12 @@ export function non_max_suppression(
 }
 
 // Convert yolo output to bounding box + prob tensors
-export function yolo_head(feats: Tensor, anchors: Tensor, numClasses: number) {
-  const numAnchors = anchors.dims[0];
+export function yolo_head(feats: Tensor) {
+  const boxXy = (yolo.slice(feats, [0, 0, 0], [1, 8400, 2]));
+  const boxWh = (yolo.slice(feats, [0, 0, 2], [1, 8400, 2]));
+  const boxClassProbs = (yolo.slice(feats, [0, 0, 4], [1, 8400, 6]));
+  const boxConfidence = (yolo.slice(feats, [0, 0, 10], [1, 8400, 1]));
 
-  const anchorsArray = yolo.reshape(anchors, [1, 1, numAnchors, 2]);
-
-  const convDims = feats.dims.slice(1, 3);
-
-  // For later use
-  const convDims0 = convDims[0];
-  const convDims1 = convDims[1];
-
-  let convHeightIndex = yolo.range(0, convDims[0]);
-  let convWidthIndex = yolo.range(0, convDims[1]);
-
-  convHeightIndex = yolo.tile(convHeightIndex, [convDims[1]]);
-
-  convWidthIndex = yolo.tile(yolo.expandDims(convWidthIndex, 0), [
-    convDims[0],
-    1,
-  ]);
-  convWidthIndex = yolo.as1D(yolo.transpose(convWidthIndex));
-
-  let convIndex = yolo.transpose(yolo.stack([convHeightIndex, convWidthIndex]));
-  convIndex = yolo.reshape(convIndex, [convDims[0], convDims[1], 1, 2]);
-  convIndex = yolo.cast(convIndex, feats.type);
-
-  feats = yolo.reshape(feats, [
-    convDims[0],
-    convDims[1],
-    numAnchors,
-    numClasses + 5,
-  ]);
-  const convDimsTensor = yolo.cast(yolo.reshape(new Tensor('int32', convDims), [1, 1, 1, 2]), feats.type);
-
-  let boxXy = yolo.sigmoid(yolo.slice(feats, [0, 0, 0, 0], [convDims0, convDims1, numAnchors, 2]));
-  let boxWh = yolo.exp(yolo.slice(feats, [0, 0, 0, 2], [convDims0, convDims1, numAnchors, 2]));
-  const boxConfidence = yolo.sigmoid(yolo.slice(feats, [0, 0, 0, 4], [convDims0, convDims1, numAnchors, 1]));
-  const boxClassProbs = yolo.softmax(yolo.slice(feats, [0, 0, 0, 5], [convDims0, convDims1, numAnchors, numClasses]));
-
-  boxXy = yolo.div(yolo.add(boxXy, convIndex), convDimsTensor);
-  boxWh = yolo.div(yolo.mul(boxWh, anchorsArray), convDimsTensor);
-  // boxXy = tf.mul(tf.add(boxXy, convIndex), 32);
-  // boxWh = tf.mul(tf.mul(boxWh, anchorsArray), 32);
   return [boxXy, boxWh, boxConfidence, boxClassProbs];
 }
 
