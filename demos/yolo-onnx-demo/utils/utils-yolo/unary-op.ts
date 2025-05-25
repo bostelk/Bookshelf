@@ -21,3 +21,27 @@ export function exp(input: Tensor): Tensor {
   }
   return new Tensor(input.type, Y, input.dims ? input.dims : [input.data.length]);
 }
+
+export function cos(input: Tensor): Tensor {
+  if (input.type === 'string') {
+    throw new Error('Unsupported type for transform');
+  }
+  const X = input.data;
+  const Y = TypedArrayUtil.createTypedArray(input.type, X.length);
+  for (let i = 0; i < X.length; i++) {
+    Y[i] = Math.cos(X[i] as number);
+  }
+  return new Tensor(input.type, Y, input.dims ? input.dims : [input.data.length]);
+}
+
+export function sin(input: Tensor): Tensor {
+  if (input.type === 'string') {
+    throw new Error('Unsupported type for transform');
+  }
+  const X = input.data;
+  const Y = TypedArrayUtil.createTypedArray(input.type, X.length);
+  for (let i = 0; i < X.length; i++) {
+    Y[i] = Math.sin(X[i] as number);
+  }
+  return new Tensor(input.type, Y, input.dims ? input.dims : [input.data.length]);
+}

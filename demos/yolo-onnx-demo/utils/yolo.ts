@@ -26,8 +26,8 @@ const DEFAULT_CLASS_PROB_THRESHOLD = 0.3;
 const INPUT_DIM = 640;
 
 export async function postprocess(outputTensor: Tensor) {
-  const [boxXy, boxWh, boxConfidence, boxClassProbs] = yolo_head(outputTensor);
-  const allBoxes = yolo_boxes_to_corners(boxXy, boxWh);
+  const [boxXy, boxWh, boxConfidence, boxClassProbs, boxTheta] = yolo_head(outputTensor);
+  const allBoxes = yolo_boxes_to_corners(boxXy, boxWh, boxTheta);
   const [outputBoxes, scores, classes] =
       await yolo_filter_boxes(allBoxes, boxConfidence, boxClassProbs, DEFAULT_FILTER_BOXES_THRESHOLD);
   // If all boxes have been filtered out
@@ -88,7 +88,7 @@ export async function postprocess(outputTensor: Tensor) {
 
 export async function yolo_filter_boxes(
     boxes: Tensor, boxConfidence: Tensor, boxClassProbs: Tensor, threshold: number) {
-  const boxScores = yolo.mul(boxConfidence, boxClassProbs);
+  const boxScores = boxClassProbs; // yolo.mul(boxConfidence, boxClassProbs);
   const boxClasses = yolo.argMax(boxScores, -1);
   const boxClassScores = yolo.max(boxScores, -1);
   // Many thanks to @jacobgil
@@ -110,19 +110,31 @@ export async function yolo_filter_boxes(
 
 /**
  * Given XY and WH tensor outputs of yolo_head, returns corner coordinates.
- * @param {Tensor} box_xy Bounding box center XY coordinate Tensor
- * @param {Tensor} box_wh Bounding box WH Tensor
+ * @param {Tensor} boxXy Oriented bounding box center XY coordinate Tensor
+ * @param {Tensor} boxWh Oritented bounding box WH Tensor
+ * @param {Tensor} boxTheta Oriented bounding box rotation Tensor in radians from 0 to pi/2
  * @returns {Tensor} Bounding box corner Tensor
  */
-export function yolo_boxes_to_corners(boxXy: Tensor, boxWh: Tensor) {
-  const two = new Tensor('float32', [2.0]);
-  const boxMins = yolo.sub(boxXy, yolo.div(boxWh, two));
-  const boxMaxes = yolo.add(boxXy, yolo.div(boxWh, two));
-
-  const dim0 = boxMins.dims[0];
-  const dim1 = boxMins.dims[1];
-  const dim2 = boxMins.dims[2];
+export function yolo_boxes_to_corners(boxXy: Tensor, boxWh: Tensor, boxTheta: Tensor) {
+  const dim0 = boxWh.dims[0];
+  const dim1 = boxWh.dims[1];
+  const dim2 = boxWh.dims[2];
   const size = [dim0, dim1, 1];
+
+  const two = new Tensor('float32', [2.0]);
+  const negativeTwo = new Tensor('float32', [-2.0]);
+  const cosTheta = yolo.cos(boxTheta)
+  const sinTheta = yolo.sin(boxTheta)
+  const width = yolo.slice(boxWh,[0, 0, 0],size)
+  const height = yolo.slice(boxWh,[0, 0, 1],size)
+
+  // rotate extents
+  const col0 = yolo.concat([yolo.mul(yolo.div(width, two), cosTheta), yolo.mul(yolo.div(width, two), sinTheta)], 2)
+  const col1 = yolo.concat([yolo.mul(yolo.div(height, negativeTwo), sinTheta), yolo.mul(yolo.div(height, two),cosTheta)], 2)
+  const prime = yolo.add(col0, col1)
+
+  const boxMins = yolo.sub(boxXy, prime);
+  const boxMaxes = yolo.add(boxXy, prime);
 
   return yolo.concat(
       [
@@ -189,9 +201,10 @@ export function yolo_head(feats: Tensor) {
   const boxXy = (yolo.slice(feats, [0, 0, 0], [1, 8400, 2]));
   const boxWh = (yolo.slice(feats, [0, 0, 2], [1, 8400, 2]));
   const boxClassProbs = (yolo.slice(feats, [0, 0, 4], [1, 8400, 6]));
-  const boxConfidence = (yolo.slice(feats, [0, 0, 10], [1, 8400, 1]));
+  const boxConfidence = null; // Note(kbostelmann): Not present.
+  const boxTheta = (yolo.slice(feats, [0, 0, 10], [1, 8400, 1])); // i.e. Rotation.
 
-  return [boxXy, boxWh, boxConfidence, boxClassProbs];
+  return [boxXy, boxWh, boxConfidence, boxClassProbs, boxTheta];
 }
 
 export function box_intersection(a: number[], b: number[]) {

@@ -127,6 +127,20 @@ export function div(t1: Tensor, t2: Tensor): Tensor {
   return binaryOp(t1, t2, (e1, e2) => (e1 / e2), t1.type);
 }
 
+export function cos(t: Tensor): Tensor {
+  if ((t.type !== 'float32' && t.type !== 'int32')) {
+    throw new Error('Unsupported type for transform');
+  }
+  return unaryOps.cos(t)
+}
+
+export function sin(t: Tensor): Tensor {
+  if ((t.type !== 'float32' && t.type !== 'int32')) {
+    throw new Error('Unsupported type for transform');
+  }
+  return unaryOps.sin(t)
+}
+
 // Normalization Tensor Transforms
 export function softmax(t: Tensor, dim = -1): Tensor {
   if (t.type !== 'float32' && t.type !== 'int32') {
