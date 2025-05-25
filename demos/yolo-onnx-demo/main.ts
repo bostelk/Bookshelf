@@ -73,6 +73,8 @@ async function postprocess(tensor: Tensor, inferenceTime: number) {
       console.log(`${top} ${left} ${bottom} ${right} ${classProb} ${className}`)
       ctx.beginPath();
       ctx.rect(left, top, right-left, bottom-top);
+      ctx.strokeStyle = "blue";
+      ctx.lineWidth = 4;
       ctx.stroke();
     });
 
