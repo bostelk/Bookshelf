@@ -1,6 +1,6 @@
 
 import {Tensor} from 'onnxruntime-web';
-import {NumberDataType} from './yoloPostprocess';
+import type {NumberDataType} from './yoloPostprocess';
 import {arrayCopyHelper, ShapeUtil, TypedArrayUtil} from './yoloPostprocessUtils';
 
 export function transpose(x: Tensor, perm?: number[]): Tensor {

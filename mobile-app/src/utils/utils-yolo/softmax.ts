@@ -1,5 +1,5 @@
 import {Tensor} from 'onnxruntime-web';
-import {NumberDataType} from './yoloPostprocess';
+import type {NumberDataType} from './yoloPostprocess';
 import {ShapeUtil, TypedArrayUtil} from './yoloPostprocessUtils';
 
 export function softmax(x: Tensor, axis: number): Tensor {
