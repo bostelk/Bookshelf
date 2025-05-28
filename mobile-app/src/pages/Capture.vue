@@ -80,8 +80,8 @@ const handleFileChange = async (event: Event) => {
 }
 
 type ImageData = {
-  width: number,
-  height: number,
+  width: number
+  height: number
   data: Uint8ClampedArray<ArrayBufferLike>
 }
 
@@ -94,23 +94,22 @@ const onPostProcess = async (image: HTMLImageElement): Promise<string> => {
     canvas.width = 640
     canvas.height = 640
 
-    const imageData = getImageData(ctx, image);
+    const imageData = getImageData(ctx, image)
 
-    const response = await fetch((import.meta.env.MODE == 'development' ? '/public/': '/') + 'onnx/spine.onnx');
-    const modelData = await response.arrayBuffer();
-    const cpuSession = await runModelUtils.createModelCpu(modelData);
-    const session = cpuSession;
-    
-    await runModelUtils.warmupModel(session, [1, 3, imageSize, imageSize]);
+    const response = await fetch(
+      (import.meta.env.MODE == 'development' ? '/public/' : '/') + 'onnx/spine.onnx',
+    )
+    const modelData = await response.arrayBuffer()
+    const cpuSession = await runModelUtils.createModelCpu(modelData)
+    const session = cpuSession
+
+    await runModelUtils.warmupModel(session, [1, 3, imageSize, imageSize])
 
     const inputTensor = preprocess(imageData)
 
-    const [outputTensor, inferenceTime] = await runModelUtils.runModel(
-      session,
-      inputTensor
-    );
+    const [outputTensor, inferenceTime] = await runModelUtils.runModel(session, inputTensor)
 
-    await postprocess(ctx, outputTensor, inferenceTime);
+    await postprocess(ctx, outputTensor, inferenceTime)
 
     // Return base64 image
     return canvas.toDataURL('image/png')
@@ -129,91 +128,64 @@ const reset = () => {
   loading.value = false
 }
 
-
-import ndarray from "ndarray";
-import ops from "ndarray-ops";
-import { runModelUtils, yolo, yoloTransforms } from "../utils/index";
-import { Tensor } from "onnxruntime-web/webgl";
+import ndarray from 'ndarray'
+import ops from 'ndarray-ops'
+import { runModelUtils, yolo, yoloTransforms } from '../utils/index'
+import { Tensor } from 'onnxruntime-web/webgl'
 
 const imageSize = 640 // 416
 
 function preprocess(image: ImageData): Tensor {
-    const { data, width, height } = image;
-    // data processing
-    // rbga
-    // python bgr
-    const dataTensor = ndarray(new Float32Array(data), [width, height, 4]);
-    const dataProcessedTensor = ndarray(new Float32Array(width * height * 3), [
-      1,
-      3,
-      width,
-      height,
-    ]);
+  const { data, width, height } = image
+  // data processing
+  // rbga
+  // python bgr
+  const dataTensor = ndarray(new Float32Array(data), [width, height, 4])
+  const dataProcessedTensor = ndarray(new Float32Array(width * height * 3), [1, 3, width, height])
 
-    ops.assign(
-      dataProcessedTensor.pick(0, 0, null, null),
-      dataTensor.pick(null, null, 0)
-    );
-    ops.assign(
-      dataProcessedTensor.pick(0, 1, null, null),
-      dataTensor.pick(null, null, 1)
-    );
-    ops.assign(
-      dataProcessedTensor.pick(0, 2, null, null),
-      dataTensor.pick(null, null, 2)
-    );
+  ops.assign(dataProcessedTensor.pick(0, 0, null, null), dataTensor.pick(null, null, 0))
+  ops.assign(dataProcessedTensor.pick(0, 1, null, null), dataTensor.pick(null, null, 1))
+  ops.assign(dataProcessedTensor.pick(0, 2, null, null), dataTensor.pick(null, null, 2))
 
-    ops.mulseq(dataProcessedTensor, 1/255)
+  ops.mulseq(dataProcessedTensor, 1 / 255)
 
-    const tensor = new Tensor("float32", new Float32Array(width * height * 3), [
-      1,
-      3,
-      width,
-      height,
-    ]);
-    (tensor.data as Float32Array).set(dataProcessedTensor.data);
+  const tensor = new Tensor('float32', new Float32Array(width * height * 3), [1, 3, width, height])
+  ;(tensor.data as Float32Array).set(dataProcessedTensor.data)
 
-    return tensor;
+  return tensor
 }
 
 async function postprocess(ctx: CanvasRenderingContext2D, tensor: Tensor, inferenceTime: number) {
   try {
-    const originalOutput = new Tensor(
-      "float32",
-      tensor.data as Float32Array,
-      [1, 11, 8400]
-    );
+    const originalOutput = new Tensor('float32', tensor.data as Float32Array, [1, 11, 8400])
 
     // [1, 11, 8400] to [1, 8400, 11]
-    const outputTensor = yoloTransforms.transpose(
-      originalOutput,
-      [0, 2, 1]
-    );
+    const outputTensor = yoloTransforms.transpose(originalOutput, [0, 2, 1])
 
     // postprocessing
-    const boxes = await yolo.postprocess(outputTensor);
+    const boxes = await yolo.postprocess(outputTensor)
     boxes.forEach((box) => {
-      const { top, left, bottom, right, classProb, className } = box;
+      const { top, left, bottom, right, classProb, className } = box
       console.log(`${top} ${left} ${bottom} ${right} ${classProb} ${className}`)
-      ctx.beginPath();
-      ctx.rect(left, top, right-left, bottom-top);
-      ctx.strokeStyle = "blue";
-      ctx.lineWidth = 4;
-      ctx.stroke();
-    });
+      ctx.beginPath()
+      ctx.rect(left, top, right - left, bottom - top)
+      ctx.strokeStyle = 'blue'
+      ctx.lineWidth = 4
+      ctx.stroke()
+    })
   } catch (e) {
     console.error(e)
-    alert("Model is not valid!");
+    alert('Model is not valid!')
   }
 }
 
 function getImageData(ctx: CanvasRenderingContext2D, image: HTMLImageElement): ImageData {
-    ctx.drawImage(image, 0, 0, imageSize, imageSize)
-    const imageData = ctx.getImageData(0, 0, imageSize, imageSize);
-    return {
-      data: imageData.data,
-      width: imageSize,
-      height: imageSize
-    }
+  ctx.drawImage(image, 0, 0, imageSize, imageSize)
+  const imageData = ctx.getImageData(0, 0, imageSize, imageSize)
+  return {
+    data: imageData.data,
+    width: imageSize,
+    height: imageSize,
+  }
 }
 </script>

@@ -1,49 +1,52 @@
-import {InferenceSession, Tensor} from 'onnxruntime-web';
-import { env } from 'onnxruntime-web';
+import { InferenceSession, Tensor } from 'onnxruntime-web'
+import { env } from 'onnxruntime-web'
 
 function init() {
-    env.wasm.wasmPaths = (import.meta.env.MODE == 'development' ? '/public/': '/') + 'js/'
+  env.wasm.wasmPaths = (import.meta.env.MODE == 'development' ? '/public/' : '/') + 'js/'
 }
 
 export async function createModelCpu(model: ArrayBuffer): Promise<InferenceSession> {
-  init();
-  return await InferenceSession.create(model, {executionProviders: ['wasm']});
+  init()
+  return await InferenceSession.create(model, { executionProviders: ['wasm'] })
 }
 export async function createModelGpu(model: ArrayBuffer): Promise<InferenceSession> {
-  init();
-  return await InferenceSession.create(model, {executionProviders: ['webgl']});
+  init()
+  return await InferenceSession.create(model, { executionProviders: ['webgl'] })
 }
 
 export async function warmupModel(model: InferenceSession, dims: number[]) {
   // OK. we generate a random input and call Session.run() as a warmup query
-  const size = dims.reduce((a, b) => a * b);
-  const warmupTensor = new Tensor('float32', new Float32Array(size), dims);
+  const size = dims.reduce((a, b) => a * b)
+  const warmupTensor = new Tensor('float32', new Float32Array(size), dims)
 
   for (let i = 0; i < size; i++) {
-    warmupTensor.data[i] = Math.random() * 2.0 - 1.0;  // random value [-1.0, 1.0)
+    warmupTensor.data[i] = Math.random() * 2.0 - 1.0 // random value [-1.0, 1.0)
   }
   try {
-    const feeds: Record<string, Tensor> = {};
-    feeds[model.inputNames[0]] = warmupTensor;
-    await model.run(feeds);
+    const feeds: Record<string, Tensor> = {}
+    feeds[model.inputNames[0]] = warmupTensor
+    await model.run(feeds)
   } catch (e) {
-    console.error(e);
+    console.error(e)
   }
 }
 
-export async function runModel(model: InferenceSession, preprocessedData: Tensor): Promise<[Tensor, number]> {
-  const start = new Date();
+export async function runModel(
+  model: InferenceSession,
+  preprocessedData: Tensor,
+): Promise<[Tensor, number]> {
+  const start = new Date()
   try {
-    const feeds: Record<string, Tensor> = {};
-    feeds[model.inputNames[0]] = preprocessedData;
-    const outputData = await model.run(feeds);
-    const end = new Date();
-    const inferenceTime = (end.getTime() - start.getTime());
-    const output = outputData[model.outputNames[0]];
+    const feeds: Record<string, Tensor> = {}
+    feeds[model.inputNames[0]] = preprocessedData
+    const outputData = await model.run(feeds)
+    const end = new Date()
+    const inferenceTime = end.getTime() - start.getTime()
+    const output = outputData[model.outputNames[0]]
 
-    return [output, inferenceTime];
+    return [output, inferenceTime]
   } catch (e) {
-    console.error(e);
-    throw new Error();
+    console.error(e)
+    throw new Error()
   }
 }

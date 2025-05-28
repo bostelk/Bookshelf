@@ -1,6 +1,6 @@
-import * as mathUtils from './math';
-import * as runModelUtils from './runModel';
-import * as yoloTransforms from './utils-yolo/yoloPostprocess';
-import * as yolo from './yolo';
+import * as mathUtils from './math'
+import * as runModelUtils from './runModel'
+import * as yoloTransforms from './utils-yolo/yoloPostprocess'
+import * as yolo from './yolo'
 
-export {mathUtils, runModelUtils, yolo, yoloTransforms};
+export { mathUtils, runModelUtils, yolo, yoloTransforms }

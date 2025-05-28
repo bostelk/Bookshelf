@@ -1,104 +1,99 @@
 <template>
   <div class="flex items-center justify-center h-full">
     <h1 class="text-2xl font-bold">Shelf Page</h1>
-    <br>
-    <div ref="shelf" id="shelf" style="min-width: 400px; min-height: 200px;">
-
-    </div>
+    <br />
+    <div ref="shelf" id="shelf" style="min-width: 400px; min-height: 200px"></div>
   </div>
 </template>
 <script setup lang="ts">
-import * as THREE from 'three';
+import * as THREE from 'three'
 import { useTemplateRef, onMounted } from 'vue'
 
 onMounted(() => {
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+  const scene = new THREE.Scene()
+  const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
 
-const renderer = new THREE.WebGLRenderer({
-  alpha: true,
+  const renderer = new THREE.WebGLRenderer({
+    alpha: true,
     premultipliedAlpha: false,
-});
-let shelf = useTemplateRef('shelf') // null???
-shelf = document.getElementById("shelf");
-shelf.appendChild( renderer.domElement );
-var rect = shelf.getBoundingClientRect();
-renderer.setSize( rect.width, rect.height );
+  })
+  let shelf = useTemplateRef('shelf') // null???
+  shelf = document.getElementById('shelf')
+  shelf.appendChild(renderer.domElement)
+  var rect = shelf.getBoundingClientRect()
+  renderer.setSize(rect.width, rect.height)
 
-const geometry = new THREE.BoxGeometry( 1, 10, 5 );
+  const geometry = new THREE.BoxGeometry(1, 10, 5)
 
-var images = [
-"/assets/img/spine/IMG_9608-rotated-3_crop_1.jpg",
-"/assets/img/spine/IMG_9608-rotated-3_crop_2.jpg",
-"/assets/img/spine/IMG_9608-rotated-3_crop_3.jpg",
-"/assets/img/spine/IMG_9608-rotated-3_crop_4.jpg",
-"/assets/img/spine/IMG_9608-rotated-3_crop_5.jpg",
-"/assets/img/spine/IMG_9608-rotated-3_crop_6.jpg",
-]
+  var images = [
+    '/assets/img/spine/IMG_9608-rotated-3_crop_1.jpg',
+    '/assets/img/spine/IMG_9608-rotated-3_crop_2.jpg',
+    '/assets/img/spine/IMG_9608-rotated-3_crop_3.jpg',
+    '/assets/img/spine/IMG_9608-rotated-3_crop_4.jpg',
+    '/assets/img/spine/IMG_9608-rotated-3_crop_5.jpg',
+    '/assets/img/spine/IMG_9608-rotated-3_crop_6.jpg',
+  ]
 
+  var cubes = []
+  for (var i = 0; i < images.length; i++) {
+    const loader = new THREE.TextureLoader()
+    const texture = loader.load(images[i])
+    texture.colorSpace = THREE.SRGBColorSpace
 
-var cubes = []
-for(var i = 0; i < images.length; i++) {
-	const loader = new THREE.TextureLoader();
-	const texture = loader.load( images[i] );
-	texture.colorSpace = THREE.SRGBColorSpace;
+    const material = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      map: texture,
+    })
 
-	const material = new THREE.MeshBasicMaterial({
-	  color: 0xFFFFFF,
-	  map: texture,
-	});
+    const cube = new THREE.Mesh(geometry, material)
+    cube.position.set(i, 0, 0)
+    scene.add(cube)
 
-	const cube = new THREE.Mesh( geometry, material );
-	cube.position.set( i, 0, 0 );
-	scene.add( cube );
+    cubes.push(cube)
+  }
 
-	cubes.push(cube)
-}
+  camera.position.x = images.length / 2
+  camera.position.z = 10
 
-camera.position.x = images.length / 2;
-camera.position.z = 10;
+  const raycaster = new THREE.Raycaster()
+  const pointer = new THREE.Vector2()
 
-const raycaster = new THREE.Raycaster();
-const pointer = new THREE.Vector2();
+  function onPointerMove(event) {
+    // calculate pointer position in normalized device coordinates
+    // (-1 to +1) for both components
+    var rect = shelf.getBoundingClientRect()
+    pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
+    pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
+  }
 
-function onPointerMove( event ) {
+  window.addEventListener('pointermove', onPointerMove)
 
-	// calculate pointer position in normalized device coordinates
-	// (-1 to +1) for both components
-  var rect = shelf.getBoundingClientRect();
-	pointer.x = ((event.clientX - rect.left)/ rect.width) * 2 - 1;
-	pointer.y = - ((event.clientY - rect.top) / rect.height) * 2 + 1;
-}
+  function animate() {
+    // update the picking ray with the camera and pointer position
+    raycaster.setFromCamera(pointer, camera)
 
-window.addEventListener( 'pointermove', onPointerMove );
+    // calculate objects intersecting the picking ray
+    const intersects = raycaster.intersectObjects(scene.children)
 
-function animate() {
+    for (let i = 0; i < cubes.length; i++) {
+      cubes[i].material.color.set(0xffffff)
+      cubes[i].rotation.set(0, 0, 0)
 
-	// update the picking ray with the camera and pointer position
-	raycaster.setFromCamera( pointer, camera );
+      let p = cubes[i].position
+      cubes[i].position.set(p.x, p.y, 0)
+    }
 
-	// calculate objects intersecting the picking ray
-	const intersects = raycaster.intersectObjects( scene.children );
+    for (let i = 0; i < intersects.length; i++) {
+      intersects[i].object.material.color.set(0.8, 0.8, 0.8)
+      intersects[i].object.rotation.set(Math.PI / 10, 0, 0)
+      let p = intersects[i].object.position
+      intersects[i].object.position.set(p.x, p.y, 2)
+      //intersects[ i ].object.rotation.set(new THREE.Vector3( Math.PI / 4,0,0));
+      break
+    }
 
-	for ( let i = 0; i < cubes.length; i ++ ) {
-		cubes[i].material.color.set(0xffffff);	
-		cubes[ i ].rotation.set(0,0,0);
-
-		let p = cubes[ i ].position;
-		cubes[ i ].position.set(p.x,p.y,0)
-	}
-	
-	for ( let i = 0; i < intersects.length; i ++ ) {
-		intersects[ i ].object.material.color.set( .8,.8,.8 );
-		intersects[ i ].object.rotation.set(Math.PI /10,0,0);
-		let p = intersects[ i ].object.position;
-		intersects[ i ].object.position.set(p.x,p.y,2)
-		//intersects[ i ].object.rotation.set(new THREE.Vector3( Math.PI / 4,0,0));		
-		break;
-	}
-
-	renderer.render( scene, camera );
-}
-renderer.setAnimationLoop( animate );
-});
+    renderer.render(scene, camera)
+  }
+  renderer.setAnimationLoop(animate)
+})
 </script>
