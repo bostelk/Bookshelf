@@ -2,7 +2,7 @@ import {InferenceSession, Tensor} from 'onnxruntime-web';
 import { env } from 'onnxruntime-web';
 
 function init() {
-    env.wasm.wasmPaths = "/public/"
+    env.wasm.wasmPaths = "/public/js/"
 }
 
 export async function createModelCpu(model: ArrayBuffer): Promise<InferenceSession> {

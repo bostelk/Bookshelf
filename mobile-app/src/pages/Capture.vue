@@ -95,7 +95,7 @@ const onPostProcess = async (image: HTMLImageElement): Promise<string> => {
 
     const imageData = getImageData(ctx, image);
 
-    const response = await fetch("public/spine.onnx");
+    const response = await fetch("public/onnx/spine.onnx");
     const modelData = await response.arrayBuffer();
     const cpuSession = await runModelUtils.createModelCpu(modelData);
     const session = cpuSession;
@@ -132,7 +132,7 @@ const reset = () => {
 import ndarray from "ndarray";
 import ops from "ndarray-ops";
 import { runModelUtils, yolo, yoloTransforms } from "../utils/index";
-import { Tensor, InferenceSession } from "onnxruntime-web";
+import { Tensor } from "onnxruntime-web/webgl";
 
 const imageSize = 640 // 416
 

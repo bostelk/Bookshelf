@@ -1,0 +1,6 @@
+# npm run prepare to copy onnx webruntime into js
+# large files
+js
+
+# large model file
+onnx
