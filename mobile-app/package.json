@@ -17,6 +17,7 @@
     "ndarray": "^1.0.19",
     "ndarray-ops": "^1.2.2",
     "onnxruntime-web": "^1.23.0-dev.20250522-ad7b0e368d",
+    "three": "^0.176.0",
     "vue": "^3.5.13",
     "vue-router": "^4.5.1"
   },
