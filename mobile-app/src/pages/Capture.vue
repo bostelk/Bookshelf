@@ -90,8 +90,9 @@ const onPostProcess = async (image: HTMLImageElement): Promise<string> => {
   const canvas = document.createElement('canvas')
   const ctx = canvas.getContext('2d')
   if (canvas && ctx) {
-    canvas.width = image.width
-    canvas.height = image.height
+    // Todo: maintain aspect ratio
+    canvas.width = 640
+    canvas.height = 640
 
     const imageData = getImageData(ctx, image);
 
