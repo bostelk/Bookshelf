@@ -1,7 +1,8 @@
 <template>
+  <div class="flex justify-center w-full">
+        <h1 class="text-2xl font-bold mb-4">Capture</h1>
+  </div>
   <div class="flex flex-col items-center justify-center h-full px-4">
-    <h1 class="text-2xl font-bold mb-4">Capture Page</h1>
-
     <input
       v-if="!processedImage"
       type="file"

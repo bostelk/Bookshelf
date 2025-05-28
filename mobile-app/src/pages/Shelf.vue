@@ -1,8 +1,9 @@
 <template>
+  <div class="flex justify-center w-full">
+    <h1 class="text-2xl font-bold">Shelf</h1>
+  </div>
   <div class="flex items-center justify-center h-full">
-    <h1 class="text-2xl font-bold">Shelf Page</h1>
-    <br />
-    <div ref="shelf" id="shelf" style="min-width: 400px; min-height: 200px"></div>
+    <div ref="shelf" id="shelf" style="min-width: 300px; min-height: 300px"></div>
   </div>
 </template>
 <script setup lang="ts">
@@ -23,7 +24,7 @@ onMounted(() => {
   var rect = shelf.getBoundingClientRect()
   renderer.setSize(rect.width, rect.height)
 
-  const geometry = new THREE.BoxGeometry(1, 10, 5)
+  const geometry = new THREE.BoxGeometry(1, 15, 0.1)
 
   var images = [
     '/assets/img/spine/IMG_9608-rotated-3_crop_1.jpg',
@@ -53,7 +54,7 @@ onMounted(() => {
   }
 
   camera.position.x = images.length / 2
-  camera.position.z = 10
+  camera.position.z = 15
 
   const raycaster = new THREE.Raycaster()
   const pointer = new THREE.Vector2()
@@ -69,6 +70,7 @@ onMounted(() => {
   window.addEventListener('pointermove', onPointerMove)
 
   function animate() {
+    if (false) {
     // update the picking ray with the camera and pointer position
     raycaster.setFromCamera(pointer, camera)
 
@@ -91,6 +93,7 @@ onMounted(() => {
       //intersects[ i ].object.rotation.set(new THREE.Vector3( Math.PI / 4,0,0));
       break
     }
+  }
 
     renderer.render(scene, camera)
   }
