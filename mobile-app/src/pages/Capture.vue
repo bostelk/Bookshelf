@@ -95,7 +95,7 @@ const onPostProcess = async (image: HTMLImageElement): Promise<string> => {
 
     const imageData = getImageData(ctx, image);
 
-    const response = await fetch("public/onnx/spine.onnx");
+    const response = await fetch((import.meta.env.MODE == 'development' ? '/public/': '/') + 'onnx/spine.onnx');
     const modelData = await response.arrayBuffer();
     const cpuSession = await runModelUtils.createModelCpu(modelData);
     const session = cpuSession;
