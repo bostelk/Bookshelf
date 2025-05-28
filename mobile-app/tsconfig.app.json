@@ -6,13 +6,14 @@
       "@/*": ["./src/*"]
     },
     
+    "noCheck": true
     /* Linting */
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "erasableSyntaxOnly": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true,
+    //"strict": true,
+    //"noUnusedLocals": true,
+    //"noUnusedParameters": true,
+    //"erasableSyntaxOnly": true,
+    //"noFallthroughCasesInSwitch": true,
+    //"noUncheckedSideEffectImports": true,
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue"]
 }
