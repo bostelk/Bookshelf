@@ -7,7 +7,7 @@
       class="border-gray-200"
       style="border-bottom-style: solid; border-bottom-width: 0.8px"
     ></div>
-    <div class="px-4 py-2">
+    <div class="px-4 py-2 h-screen overflow-y-auto pb-25">
       <RouterView />
     </div>
     <BottomNav />
