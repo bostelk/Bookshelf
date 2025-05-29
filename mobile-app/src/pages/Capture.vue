@@ -138,7 +138,7 @@ const onPostProcess = async (image: HTMLImageElement): Promise<string> => {
 }
 
 const addToShelf = () => {
-  const newShelf = {title: "My Shelf", image:""};
+  const newShelf = { title: 'My Shelf', image: '' }
   newShelf.image = processedImage.value
   shelfs.value.push(newShelf)
   router.push('/shelf')
@@ -190,11 +190,13 @@ async function postprocess(ctx: CanvasRenderingContext2D, tensor: Tensor, infere
     boxes.forEach((box) => {
       const { top, left, bottom, right, classProb, className } = box
       console.log(`${top} ${left} ${bottom} ${right} ${classProb} ${className}`)
-      ctx.beginPath()
-      ctx.rect(left, top, right - left, bottom - top)
-      ctx.strokeStyle = 'blue'
-      ctx.lineWidth = 4
-      ctx.stroke()
+      if (className == 'Book') {
+        ctx.beginPath()
+        ctx.rect(left, top, right - left, bottom - top)
+        ctx.strokeStyle = 'blue'
+        ctx.lineWidth = 4
+        ctx.stroke()
+      }
     })
   } catch (e) {
     console.error(e)

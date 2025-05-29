@@ -10,12 +10,10 @@
   <br />
   <div class="mb-4" v-for="shelf of shelfs">
     <h2 class="font-bold">{{ shelf.title }}</h2>
-    <img
-      :src="shelf.image"
-    />
+    <img :src="shelf.image" />
   </div>
   <br />
 </template>
 <script setup lang="ts">
-import { shelfs } from '../user';
+import { shelfs } from '../user'
 </script>
