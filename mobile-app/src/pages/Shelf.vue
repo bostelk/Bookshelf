@@ -1,6 +1,6 @@
 <template>
   <h1 class="text-2xl font-bold">Shelfs</h1>
-  <p class="text-gray-500">Search books you own</p>
+  <p class="text-gray-500">Search books in your collection</p>
   <br />
   <input type="text" placeholder="..." class="bg-gray-100 rounded" style="width: 250px" />
   &nbsp;<button
