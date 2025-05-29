@@ -138,6 +138,9 @@ const onPostProcess = async (image: HTMLImageElement): Promise<string> => {
 }
 
 const addToShelf = () => {
+  const newShelf = {title: "My Shelf", image:""};
+  newShelf.image = processedImage.value
+  shelfs.value.push(newShelf)
   router.push('/shelf')
 }
 
@@ -150,6 +153,8 @@ import ndarray from 'ndarray'
 import ops from 'ndarray-ops'
 import { runModelUtils, yolo, yoloTransforms } from '../utils/index'
 import { Tensor } from 'onnxruntime-web/webgl'
+import { EmitFlags } from 'typescript'
+import { shelfs } from '../user'
 
 const imageSize = 640 // 416
 

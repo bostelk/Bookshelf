@@ -8,41 +8,14 @@
   </button>
   <br />
   <br />
-  <div class="">
-    <h2 class="font-bold">My Shelf</h2>
+  <div class="mb-4" v-for="shelf of shelfs">
+    <h2 class="font-bold">{{ shelf.title }}</h2>
     <img
-      src="https://www.penguinrandomhouse.ca/sites/default/files/inline-images/Bright%20Bookshelf.jpg"
-      width="400"
-      height="400"
-    />
-  </div>
-  <br />
-  <div class="">
-    <h2 class="font-bold">Horror Shelf</h2>
-    <img
-      src="https://www.penguinrandomhouse.ca/sites/default/files/inline-images/Bright%20Bookshelf.jpg"
-      width="400"
-      height="400"
-    />
-  </div>
-  <br />
-  <div class="">
-    <h2 class="font-bold">Fantasy Shelf</h2>
-    <img
-      src="https://www.penguinrandomhouse.ca/sites/default/files/inline-images/Bright%20Bookshelf.jpg"
-      width="400"
-      height="400"
-    />
-  </div>
-  <br />
-  <div class="">
-    <h2 class="font-bold">Science Shelf</h2>
-    <img
-      src="https://www.penguinrandomhouse.ca/sites/default/files/inline-images/Bright%20Bookshelf.jpg"
-      width="400"
-      height="400"
+      :src="shelf.image"
     />
   </div>
   <br />
 </template>
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { shelfs } from '../user';
+</script>
