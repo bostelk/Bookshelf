@@ -1,20 +1,29 @@
 <template>
-  <div class="flex justify-center w-full">
-        <h1 class="text-2xl font-bold mb-4">Capture</h1>
+  <div class="">
+    <h1 class="text-2xl font-bold">Scan your books</h1>
+    <p class="text-gray-500">Scan and create your own personal digital library.</p>
+    <br />
+    <button
+      class="bg-black hover:bg-white border-1 hover:text-black text-white font-bold py-2 px-4 rounded"
+      @click="showPicker"
+    >
+      Scan
+    </button>
   </div>
   <div class="flex flex-col items-center justify-center h-full px-4">
     <input
       v-if="!processedImage"
+      ref="camera-file-picker"
+      class="hidden"
       type="file"
       accept="image/*"
       capture="environment"
       @change="handleFileChange"
-      class="mb-4 border bg-gray-300 p-2 rounded cursor-pointer"
     />
 
     <div v-if="loading" class="flex flex-col items-center mt-4">
       <svg
-        class="animate-spin h-8 w-8 text-blue-500"
+        class="animate-spin h-8 w-8 text-black"
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
         viewBox="0 0 24 24"
@@ -39,11 +48,14 @@
         <div class="flex space-x-4">
           <button
             @click="addToShelf"
-            class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded"
+            class="bg-black hover:bg-white border-1 hover:text-black text-white font-bold py-2 px-4 rounded"
           >
             Add to Shelf
           </button>
-          <button @click="reset" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded">
+          <button
+            @click="reset"
+            class="bg-black hover:bg-white border-1 hover:text-black text-white font-bold py-2 px-4 rounded"
+          >
             Reset
           </button>
         </div>
@@ -53,11 +65,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, useTemplateRef } from 'vue'
+import { useRouter } from 'vue-router'
 
 const loading = ref(false)
 const processedImage = ref<string | null>(null)
+const cameraFilePicker = useTemplateRef('camera-file-picker')
+const router = useRouter()
 
+const showPicker = () => {
+  cameraFilePicker.value?.showPicker()
+}
 const handleFileChange = async (event: Event) => {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
@@ -120,8 +138,7 @@ const onPostProcess = async (image: HTMLImageElement): Promise<string> => {
 }
 
 const addToShelf = () => {
-  // Placeholder for functionality to add the processed image to a shelf
-  alert('Image added to shelf!')
+  router.push('/shelf')
 }
 
 const reset = () => {

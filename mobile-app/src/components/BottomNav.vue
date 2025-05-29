@@ -4,14 +4,14 @@
   >
     <RouterLink to="/capture" class="flex flex-col items-center text-sm">
       <CameraIcon
-        :class="[isActive('/capture') ? 'text-blue-500' : 'text-gray-400']"
+        :class="[isActive('/capture') ? 'text-black' : 'text-gray-400']"
         class="h-6 w-6"
       />
       <span>Capture</span>
     </RouterLink>
     <RouterLink to="/shelf" class="flex flex-col items-center text-sm">
       <BookOpenIcon
-        :class="[isActive('/shelf') ? 'text-blue-500' : 'text-gray-400']"
+        :class="[isActive('/shelf') ? 'text-black' : 'text-gray-400']"
         class="h-6 w-6"
       />
       <span>Shelf</span>
