@@ -70,6 +70,8 @@ import { useRouter } from 'vue-router'
 
 const loading = ref(false)
 const processedImage = ref<string | null>(null)
+const boxesRef = ref([])
+const boxImagesRef = ref([])
 const cameraFilePicker = useTemplateRef('camera-file-picker')
 const router = useRouter()
 
@@ -89,7 +91,10 @@ const handleFileChange = async (event: Event) => {
     if (typeof reader.result === 'string') {
       const image = new Image()
       image.onload = async () => {
-        processedImage.value = await onPostProcess(image)
+        const [newImage, newBoxes, newBoxImages] = await onPostProcess(image)
+        processedImage.value = newImage
+        boxesRef.value = newBoxes
+        boxImagesRef.value = newBoxImages
         loading.value = false
       }
       image.src = reader.result
@@ -128,19 +133,33 @@ const onPostProcess = async (image: HTMLImageElement): Promise<string> => {
 
     const [outputTensor, inferenceTime] = await runModelUtils.runModel(session, inputTensor)
 
-    await postprocess(ctx, outputTensor, inferenceTime)
+    const [boxes, boxImages] = await postprocess(ctx, outputTensor, inferenceTime)
+
+    const sortedIndices = boxes
+      .map((box, index) => ({ box, index })) // Create a tuple with the box and its original index
+      .sort((a, b) => {
+        return a.box.left - b.box.left
+      })
+      .map((item) => item.index) // Get the sorted indices
+
+    const sortedBoxes = sortedIndices.map((index) => boxes[index])
+    const sortedBoxImages = sortedIndices.map((index) => boxImages[index])
 
     // Return base64 image
-    return canvas.toDataURL('image/png')
+    return [canvas.toDataURL('image/png'), sortedBoxes, sortedBoxImages]
   } else {
     return ''
   }
 }
 
 const addToShelf = () => {
-  const newShelf = { title: 'My Shelf', image: '' }
-  newShelf.image = processedImage.value
-  shelfs.value.push(newShelf)
+  const newShelf = {
+    title: 'My Shelf',
+    boxes: boxesRef.value,
+    images: boxImagesRef.value,
+    books: ['', '', '', '', 'oz'],
+  }
+  userShelfs.value.push(newShelf)
   router.push('/shelf')
 }
 
@@ -153,8 +172,7 @@ import ndarray from 'ndarray'
 import ops from 'ndarray-ops'
 import { runModelUtils, yolo, yoloTransforms } from '../utils/index'
 import { Tensor } from 'onnxruntime-web/webgl'
-import { EmitFlags } from 'typescript'
-import { shelfs } from '../user'
+import { userShelfs } from '../user'
 
 const imageSize = 640 // 416
 
@@ -187,21 +205,40 @@ async function postprocess(ctx: CanvasRenderingContext2D, tensor: Tensor, infere
 
     // postprocessing
     const boxes = await yolo.postprocess(outputTensor)
+    const images = []
+    boxes.forEach((box) => {
+      const { top, left, bottom, right, className } = box
+      if (className == 'Book') {
+        const width = right - left
+        const height = bottom - top
+        const boxCanvas = document.createElement('canvas')
+        boxCanvas.width = width
+        boxCanvas.height = height
+        const boxCtx = boxCanvas.getContext('2d')
+        const imageData = ctx.getImageData(left, top, width, height)
+        boxCtx.putImageData(imageData, 0, 0)
+        images.push(boxCanvas.toDataURL('image/png'))
+      }
+    })
     boxes.forEach((box) => {
       const { top, left, bottom, right, classProb, className } = box
       console.log(`${top} ${left} ${bottom} ${right} ${classProb} ${className}`)
       if (className == 'Book') {
+        const width = right - left
+        const height = bottom - top
         ctx.beginPath()
-        ctx.rect(left, top, right - left, bottom - top)
+        ctx.rect(left, top, width, height)
         ctx.strokeStyle = 'blue'
         ctx.lineWidth = 4
         ctx.stroke()
       }
     })
+    return [boxes, images]
   } catch (e) {
     console.error(e)
     alert('Model is not valid!')
   }
+  return []
 }
 
 function getImageData(ctx: CanvasRenderingContext2D, image: HTMLImageElement): ImageData {
