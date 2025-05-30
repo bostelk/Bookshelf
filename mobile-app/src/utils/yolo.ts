@@ -12,8 +12,8 @@ export const YOLO_ANCHORS = new Tensor(
   [5, 2],
 )
 const DEFAULT_FILTER_BOXES_THRESHOLD = 0.01
-const DEFAULT_IOU_THRESHOLD = 0.3
-const DEFAULT_CLASS_PROB_THRESHOLD = 0.3
+const DEFAULT_IOU_THRESHOLD = 0.7
+const DEFAULT_CLASS_PROB_THRESHOLD = 0.5
 const INPUT_DIM = 640
 
 export async function postprocess(outputTensor: Tensor) {
@@ -53,7 +53,7 @@ export async function postprocess(outputTensor: Tensor) {
   classesIndxArr.forEach((classIndx, i) => {
     const classProb = keepScores[i]
     if (classProb < DEFAULT_CLASS_PROB_THRESHOLD) {
-      //return;
+      return
     }
 
     const className = classNames[classIndx]
@@ -124,7 +124,7 @@ export function yolo_boxes_to_corners(boxXy: Tensor, boxWh: Tensor, boxTheta: Te
   const width = yolo.slice(boxWh, [0, 0, 0], size)
   const height = yolo.slice(boxWh, [0, 0, 1], size)
 
-  // rotate extents
+  // rotate half-extents
   const col0 = yolo.concat(
     [yolo.mul(yolo.div(width, two), cosTheta), yolo.mul(yolo.div(width, two), sinTheta)],
     2,
@@ -176,6 +176,18 @@ export function non_max_suppression(
 
   const selectedBoxes: any[] = []
 
+  // hack: left/right swap in yolo_boxes_to_corners
+  sortedBoxes.forEach((box: any[]) => {
+    const top = Math.min(box[1][0], box[1][2])
+    const left = Math.min(box[1][1], box[1][3])
+    const bottom = Math.max(box[1][0], box[1][2])
+    const right = Math.max(box[1][1], box[1][3])
+    box[1][0] = top
+    box[1][1] = left
+    box[1][2] = bottom
+    box[1][3] = right
+  })
+
   // Greedily go through boxes in descending score order and only
   // return boxes that are below the IoU threshold.
   sortedBoxes.forEach((box: any[]) => {
@@ -213,6 +225,9 @@ export function yolo_head(feats: Tensor) {
   return [boxXy, boxWh, boxConfidence, boxClassProbs, boxTheta]
 }
 
+//yx, yx
+// top left, bottom right
+// 0   1   , 2      3
 export function box_intersection(a: number[], b: number[]) {
   const w = Math.min(a[3], b[3]) - Math.max(a[1], b[1])
   const h = Math.min(a[2], b[2]) - Math.max(a[0], b[0])
